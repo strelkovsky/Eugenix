@@ -4,9 +4,15 @@
 #include <GL/glew.h>
 
 float vertices[] = {
-   -1.0f, -1.0f, 0.0f,
-   1.0f, -1.0f, 0.0f,
-   0.0f,  1.0f, 0.0f,
+	 0.5f,  0.5f, 0.0f,  // top right
+	 0.5f, -0.5f, 0.0f,  // bottom right
+	-0.5f, -0.5f, 0.0f,  // bottom left
+	-0.5f,  0.5f, 0.0f   // top left 
+};
+
+unsigned int indices[] = {  // note that we start from 0!
+	0, 1, 3,   // first triangle
+	1, 2, 3    // second triangle
 };
 
 using namespace Eugenix;
@@ -58,12 +64,6 @@ public:
 			return false;
 		}
 
-		unsigned int vbo = 0;
-		glGenBuffers(1, &vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 		_shaderProgram = glCreateProgram();
 		glAttachShader(_shaderProgram, vertexShader);
 		glAttachShader(_shaderProgram, fragmentShader);
@@ -85,13 +85,22 @@ public:
 		// ..:: Initialization code (done once (unless your object frequently changes)) :: ..
 		// 1. bind Vertex Array Object
 		glBindVertexArray(_vao);
-		// 2. copy our vertices array in a buffer for OpenGL to use
+		// 2. copy our vertices array in a buffer for OpenGL to use+
+		unsigned int vbo = 0;
+		glGenBuffers(1, &vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		unsigned int ebo = 0;
+		glGenBuffers(1, &ebo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
 		// 3. then set our vertex attributes pointers
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
 
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
 		return true;
@@ -102,7 +111,8 @@ public:
 
 		glUseProgram(_shaderProgram);
 		glBindVertexArray(_vao);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		//glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices));
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	}
 
 private:
