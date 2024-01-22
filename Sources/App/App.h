@@ -14,7 +14,7 @@ namespace Eugenix
 	public:
 		int Run()
 		{
-			if (!Runtime::Init())
+			if (!Runtime::Init(DisplaySetup()))
 				return 0;
 
 			if (!OnInit())

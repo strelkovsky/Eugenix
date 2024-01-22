@@ -5,90 +5,88 @@
 
 #include "Runtime.h"
 
-#define GLEW_STATIC
-#include <GL/glew.h>
+#ifdef EUGENIX_GLFW_RUNTIME
+
+#ifdef EUGENIX_OPENGL
+	#include "Platform/EugenixGL.h"
+#endif
 
 #include <GLFW/glfw3.h>
 
 namespace Eugenix
 {
-	// settings
-	const unsigned int SCR_WIDTH = 800;
-	const unsigned int SCR_HEIGHT = 600;
-
-	// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 	// ---------------------------------------------------------------------------------------------------------
-	void processInput(GLFWwindow *window)
+	void key_callback(GLFWwindow *window)
 	{
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 			glfwSetWindowShouldClose(window, true);
 	}
 
-	// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-	// ---------------------------------------------------------------------------------------------
-	void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+	void resize_callback(GLFWwindow* window, int width, int height)
 	{
-		// make sure the viewport matches the new window dimensions; note that width and 
-		// height will be significantly larger than specified on retina displays.
 		glViewport(0, 0, width, height);
 	}
 
 	namespace Runtime
 	{
+		DisplaySetup _setup;
 		GLFWwindow* _window = nullptr;
 
-		bool Init()
+		bool Init(const DisplaySetup& setup)
 		{
-			// glfw: initialize and configure
-			// ------------------------------
-			glfwInit();
+			_setup = setup;
+
+			if (glfwInit() != GLFW_TRUE)
+			{
+				fprintf(stderr, "glfwInit error\n");
+				return false;
+			}
+
+#ifdef EUGENIX_OPENGL
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif // EUGENIX_OPENGL
 
-			// glfw window creation
-			// --------------------
-			_window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Eugenix", NULL, NULL);
+#ifdef EUGENIX_DEBUG
+			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+#endif // EUGENIX_DEBUG
+
+			_window = glfwCreateWindow(_setup.width, _setup.height, "Eugenix", NULL, NULL);
 			if (_window == nullptr)
 			{
 				fprintf(stderr, "Failed to create GLFW window\n");
 				glfwTerminate();
 				return false;
 			}
+
 			glfwMakeContextCurrent(_window);
-			glfwSetFramebufferSizeCallback(_window, framebuffer_size_callback);
+			glfwSetFramebufferSizeCallback(_window, resize_callback);
 
-			// Initialise glew
-			glewExperimental = true; // Needed in core profile
-			if (glewInit() != GLEW_OK) 
-			{
-				fprintf(stderr, "Failed to initialize GLEW\n");
+#ifdef EUGENIX_OPENGL
+			if (!EugenixGL::Init())
 				return false;
-			}
-
+#endif // EUGENIX_OPENGL
 			return true;
 		}
 
 		void Term()
 		{
-			// glfw: terminate, clearing all previously allocated GLFW resources.
-			// ------------------------------------------------------------------
 			glfwTerminate();
 		}
 
 		bool RunFrame()
 		{
-			processInput(_window);
-			
+			key_callback(_window);
+			glfwPollEvents();
 			return !glfwWindowShouldClose(_window);
 		}
 
 		void CommitFrame()
 		{
-			// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-			// -------------------------------------------------------------------------------
-			glfwSwapBuffers(_window);
-			glfwPollEvents();
+			glfwSwapBuffers(_window);	
 		}
 	} // namespace Runtime
 } // namespace Eugenix
+
+#endif

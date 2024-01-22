@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "CompileConfig.h"
 #include "Core/Base.h"
 
 namespace Eugenix
@@ -18,7 +19,7 @@ namespace Eugenix
 
 	namespace Runtime
 	{
-		bool Init();
+		bool Init(const DisplaySetup& setup);
 		void Term();
 
 		bool RunFrame();
