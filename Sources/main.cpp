@@ -3,6 +3,11 @@
 
 #include <GL/glew.h>
 
+#include <glm/gtc/matrix_transform.hpp> 
+#include <glm/gtx/transform.hpp>
+
+#include <vector>
+
 float vertices[] = {
 	 0.5f,  0.5f, 0.0f,  // top right
 	 0.5f, -0.5f, 0.0f,  // bottom right
@@ -18,10 +23,12 @@ unsigned int indices[] = {  // note that we start from 0!
 using namespace Eugenix;
 
 const char *vertexShaderSource = "#version 330 core\n"
-	"layout (location = 0) in vec3 aPos;\n"
-	"void main()\n"
-	"{\n"
-	"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"layout (location = 0) in vec3 vertexPosition_modelspace;\n"
+"uniform mat4 MVP;\n"
+"void main()\n"
+"{\n"
+// Выходная позиция нашей вершины: MVP * position
+"gl_Position = MVP * vec4(vertexPosition_modelspace, 1);\n"
 	"}\0";
 
 const char *fragmentShaderSource = "#version 330 core\n"
@@ -36,49 +43,9 @@ class TestApp : public App
 public:
 	virtual bool OnInit()
 	{
-		unsigned int vertexShader;
-		vertexShader = glCreateShader(GL_VERTEX_SHADER);
-		glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-		glCompileShader(vertexShader);
-
-		int  success;
-		char infoLog[512];
-		glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-		if (!success)
-		{
-			glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-			printf("failed to compile shader - %s", infoLog);
+		_shaderProgram = CreateShaderProgram(&vertexShaderSource, &fragmentShaderSource);
+		if (_shaderProgram == -1)
 			return false;
-		}
-
-		unsigned int fragmentShader;
-		fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-		glCompileShader(fragmentShader);
-
-		glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-		if (!success)
-		{
-			glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-			printf("failed to compile shader - %s", infoLog);
-			return false;
-		}
-
-		_shaderProgram = glCreateProgram();
-		glAttachShader(_shaderProgram, vertexShader);
-		glAttachShader(_shaderProgram, fragmentShader);
-		glLinkProgram(_shaderProgram);
-
-		glGetProgramiv(_shaderProgram, GL_LINK_STATUS, &success);
-		if (!success) {
-			glGetProgramInfoLog(_shaderProgram, 512, NULL, infoLog);
-			printf("failed to link shader program - %s", infoLog);
-			return false;
-		}
-
-		//glUseProgram(shaderProgram);
-		glDeleteShader(vertexShader);
-		glDeleteShader(fragmentShader);
 
 		glGenVertexArrays(1, &_vao);
 
@@ -103,21 +70,115 @@ public:
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
+		glm::mat4 Projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+		glm::mat4 View = glm::lookAt(
+			glm::vec3(4, 3, 3), // Камера находится в мировых координатах (4,3,3)
+			glm::vec3(0, 0, 0), // И направлена в начало координат
+			glm::vec3(0, 1, 0)  // "Голова" находится сверху
+		);
+		// Матрица модели : единичная матрица (Модель находится в начале координат)
+		glm::mat4 Model = glm::mat4(1.0f);  // Индивидуально для каждой модели
+
+		// Итоговая матрица ModelViewProjection, которая является результатом перемножения наших трех матриц
+		_MVP = Projection * View * Model; // Помните, что умножение матрицы производиться в обратном порядке
+
+		MatrixID = glGetUniformLocation(_shaderProgram, "MVP");
+
 		return true;
 	}
 	virtual void OnRender()
 	{
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(_shaderProgram);
+
+		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &_MVP[0][0]);
+
 		glBindVertexArray(_vao);
 		//glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices));
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	}
 
 private:
+
+	int CreateShaderProgram(const GLchar *const* vsSource, const GLchar *const* fsSource)
+	{
+		unsigned int shaderProgramId = -1;
+
+		unsigned int vertexShaderId = CreateShader(GL_VERTEX_SHADER, vsSource);
+		if (vertexShaderId == -1)
+			return shaderProgramId;
+
+		unsigned int fragmentShaderId = CreateShader(GL_FRAGMENT_SHADER, fsSource);
+		if (fragmentShaderId == -1)
+			return shaderProgramId;
+
+		shaderProgramId = glCreateProgram();
+		glAttachShader(shaderProgramId, vertexShaderId);
+		glAttachShader(shaderProgramId, fragmentShaderId);
+		glLinkProgram(shaderProgramId);
+
+		if (!CheckShaderProgramStatus(shaderProgramId))
+		{
+			return -1;
+		}
+
+		//glUseProgram(shaderProgram);
+		glDeleteShader(vertexShaderId);
+		glDeleteShader(fragmentShaderId);
+
+		return shaderProgramId;
+	}
+
+	int CreateShader(GLenum shaderType, const GLchar *const* source)
+	{
+		unsigned int shaderId = glCreateShader(shaderType);
+		glShaderSource(shaderId, 1, source, NULL);
+		glCompileShader(shaderId);
+
+		return CheckShaderCompilation(shaderId) ? shaderId : -1;
+	}
+
+	bool CheckShaderCompilation(unsigned int shaderId)
+	{
+		int  success;
+		glGetShaderiv(shaderId, GL_LINK_STATUS, &success);
+		if (!success)
+		{
+			int infoLogLength;
+			glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &infoLogLength);
+			std::vector<char> infoLog(infoLogLength + 1);
+			glGetShaderInfoLog(shaderId, infoLogLength, NULL, &infoLog[0]);
+			printf("failed to compile shader - %s", &infoLog[0]);
+			return false;
+		}
+
+		return true;
+	}
+
+	bool CheckShaderProgramStatus(unsigned int programId)
+	{
+		int  success;
+		glGetProgramiv(programId, GL_LINK_STATUS, &success);
+		if (!success)
+		{
+			int infoLogLength;
+			glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &infoLogLength);
+			std::vector<char> infoLog(infoLogLength + 1);
+			glGetProgramInfoLog(programId, infoLogLength, NULL, &infoLog[0]);
+			printf("failed to compile shader - %s", &infoLog[0]);
+			return false;
+		}
+
+		return true;
+	}
+
 	unsigned int _vao = 0;
 	unsigned int _shaderProgram = 0;
+
+	GLuint MatrixID;
+
+	glm::mat4 _MVP;
 };
 
 int main()
