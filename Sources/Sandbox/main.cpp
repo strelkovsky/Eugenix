@@ -8,6 +8,25 @@
 
 #include <GL/GL.h>
 
+class CChronometer
+{
+public:
+    CChronometer()
+        : m_lastTime(std::chrono::system_clock::now())
+    {}
+
+    float GrabDeltaTime()
+    {
+        auto newTime = std::chrono::system_clock::now();
+        auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(newTime - m_lastTime);
+        m_lastTime = newTime;
+        return 0.001f * float(timePassed.count());
+    };
+
+private:
+    std::chrono::system_clock::time_point m_lastTime;
+};
+
 //Graphics program
 GLuint gProgramID = 0;
 GLint gVertexPos2DLocation = -1;
@@ -188,11 +207,12 @@ int main(int argc, char* argv[])
 
     bool isRunning = true;
 
-    auto lastTimePoint = std::chrono::system_clock::now();
+    CChronometer chronometer;
+    SDL_Event event;
 
     while (isRunning)
     {
-        SDL_Event event;
+        
         while (SDL_PollEvent(&event))
         {
             switch (event.type)
@@ -203,6 +223,9 @@ int main(int argc, char* argv[])
                 break;
             }
         }
+
+        const float deltaSeconds = chronometer.GrabDeltaTime();
+        printf("frame time: %f", deltaSeconds);
 
         //Clear color buffer
         glClear(GL_COLOR_BUFFER_BIT);
@@ -220,14 +243,7 @@ int main(int argc, char* argv[])
 
         glUseProgram(NULL);
 
-        SDL_GL_SwapWindow(mainWindow);
-
-        auto newTimePoint = std::chrono::system_clock::now();
-        auto dtMsec = std::chrono::duration_cast<std::chrono::milliseconds>(newTimePoint - lastTimePoint);
-        lastTimePoint = newTimePoint;
-        float dtSeconds = 0.001f * float(dtMsec.count());
-
-        printf("frame time: %f", dtSeconds);
+        SDL_GL_SwapWindow(mainWindow);       
     }
 
     return 0;
