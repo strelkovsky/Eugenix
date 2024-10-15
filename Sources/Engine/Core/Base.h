@@ -8,7 +8,9 @@
 //-------------------------------
 // STD Headers
 //-------------------------------
+#include <algorithm>
 #include <cstdint>
+#include <vector>
 
 //-------------------------------
 // Eugenix Headers
