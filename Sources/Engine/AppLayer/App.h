@@ -2,6 +2,8 @@
 
 #include <chrono>
 
+#include <SDL.h>
+
 class CChronometer
 {
 public:
@@ -37,7 +39,6 @@ protected:
     virtual void OnRender() {}
     virtual void OnUpdate(float deltaTime) {}
 
-    GLuint CreateTexture(const std::string& name);
     std::string loadStringFromFile(const std::string& filename);
 
 private:
