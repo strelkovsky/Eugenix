@@ -69,6 +69,10 @@ namespace Eugenix
 				return false;
 			}
 
+			glfwSetKeyCallback(_window, key_callback);
+			glfwSetMouseButtonCallback(_window, mouse_button_callback);
+			glfwSetWindowSizeCallback(_window, resize_callback);
+
 #ifdef EUGENIX_OPENGL
 			glfwMakeContextCurrent(_window);
 #endif
