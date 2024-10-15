@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <chrono>
 
 #define GLEW_STATIC
 #include <gl/glew.h>
@@ -185,9 +186,11 @@ int main(int argc, char* argv[])
         }
     }
 
+    bool isRunning = true;
 
+    auto lastTimePoint = std::chrono::system_clock::now();
 
-    for (;;)
+    while (isRunning)
     {
         SDL_Event event;
         while (SDL_PollEvent(&event))
@@ -196,7 +199,7 @@ int main(int argc, char* argv[])
             {
             case SDL_KEYUP:
                 if (event.key.keysym.sym == SDLK_ESCAPE)
-                    return 0;
+                    isRunning = false;
                 break;
             }
         }
@@ -218,7 +221,13 @@ int main(int argc, char* argv[])
         glUseProgram(NULL);
 
         SDL_GL_SwapWindow(mainWindow);
-        SDL_Delay(1);
+
+        auto newTimePoint = std::chrono::system_clock::now();
+        auto dtMsec = std::chrono::duration_cast<std::chrono::milliseconds>(newTimePoint - lastTimePoint);
+        lastTimePoint = newTimePoint;
+        float dtSeconds = 0.001f * float(dtMsec.count());
+
+        printf("frame time: %f", dtSeconds);
     }
 
     return 0;
