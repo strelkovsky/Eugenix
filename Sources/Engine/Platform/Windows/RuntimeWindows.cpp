@@ -367,9 +367,9 @@ namespace Eugenix
 #endif // EUGENIX_OPENGL
 		}
 
-		int EugenixMain()
+		const DisplaySetup& Setup()
 		{
-			return 0;
+			return _setup;
 		}
 
 	} // namespace Runtime

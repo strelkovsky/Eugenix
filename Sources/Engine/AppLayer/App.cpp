@@ -51,6 +51,8 @@ int App::Run()
     OnShutdown();
 
     Runtime::Term();
+
+    return status;
 }
 
 int App::InternalMainLoop()

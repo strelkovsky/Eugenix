@@ -129,6 +129,11 @@ namespace Eugenix
 		{
 			SDL_SetWindowSize(_window, width, height);
 		}
+
+		const DisplaySetup& Setup()
+		{
+			return _setup;
+		}
 	} // namespace Runtime
 } // namespace Eugenix
 #endif // EUGENIX_SDL_RUNTIME

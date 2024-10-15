@@ -25,5 +25,6 @@ namespace Eugenix
 		const DisplaySetup& Setup();
 	} // namespace Runtime
 
+	// TODO
 	int AppEntryPoint();
 } // namespace Eugenix
