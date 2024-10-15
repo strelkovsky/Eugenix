@@ -3,7 +3,7 @@
 #include "AppLayer/App.h"
 #include "SimpleGLRender.h"
 
-class SimpleGLApp : public App
+class SimpleGLApp : public Eugenix::App
 {
 protected:
 	GLProgramPtr CreateProgramFromFile(const std::string& vsSourceFile, const std::string& fsSourceFile);
