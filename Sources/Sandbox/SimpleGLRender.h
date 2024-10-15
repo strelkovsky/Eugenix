@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <map>
 
 using GLHandle = GLuint; 
 
@@ -28,6 +29,7 @@ struct GLShaderProgram final
 
 private:
 	GLuint _glProgram;
+	std::map<std::string, GLint> _uniformLocations;
 };
 using GLProgramPtr = std::shared_ptr<GLShaderProgram>;
 
@@ -45,3 +47,11 @@ private:
 	int _count;
 };
 using GLRenderObjectPtr = std::shared_ptr<GLRenderObject>;
+
+namespace ShaderEnv
+{
+	namespace Defaults
+	{
+		GLProgramPtr SimpleDiffuse();
+	} // namespace Defaults
+} // namespace ShaderEnv
