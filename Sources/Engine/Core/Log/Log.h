@@ -9,7 +9,7 @@ namespace Eugenix
 {
 	namespace Log
 	{
-		enum struct Level
+		enum struct Level : short
 		{
 			None = 0,
 
@@ -17,6 +17,12 @@ namespace Eugenix
 			Warning,
 			Error,
 			Fatal
+		};
+
+		struct LogProcessor
+		{
+			virtual ~LogProcessor() = 0;
+			virtual void Message(Level level, const char* format, va_list argsptr) = 0;
 		};
 
 		void Info(const char* fmtMsg, ...);
