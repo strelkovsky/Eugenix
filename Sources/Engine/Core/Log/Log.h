@@ -9,6 +9,16 @@ namespace Eugenix
 {
 	namespace Log
 	{
+		enum struct Level
+		{
+			None = 0,
+
+			Info,
+			Warning,
+			Error,
+			Fatal
+		};
+
 		void Info(const char* fmtMsg, ...);
 		void Warning(const char* fmtMsg, ...);
 		void Error(const char* fmtMsg, ...);

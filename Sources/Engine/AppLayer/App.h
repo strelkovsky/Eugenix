@@ -15,30 +15,62 @@ namespace Eugenix
     {
     public:
         CChronometer()
-            : m_lastTime(std::chrono::system_clock::now())
-        {}
+        {
+            Reset();
+        }
 
         void Reset()
         {
-            m_lastTime = std::chrono::system_clock::now();
+            _lastTime = std::chrono::system_clock::now();
         }
 
         float GrabDeltaTime()
         {
             auto newTime = std::chrono::system_clock::now();
-            auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(newTime - m_lastTime);
-            m_lastTime = newTime;
+            auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(newTime - _lastTime);
+            _lastTime = newTime;
             return 0.001f * float(timePassed.count());
         };
 
     private:
-        std::chrono::system_clock::time_point m_lastTime;
+        std::chrono::system_clock::time_point _lastTime;
+    };
+
+    struct ApplicationConfig
+    {
+        struct App
+        {
+            bool enableConsole = true;
+        } app;
+
+        struct Window
+        {
+            int width = 640;
+            int height = 480;
+            const char* title = "Test";
+            bool fullscreen = false;
+        } window;
+
+        struct Graphics
+        {
+            float maxFPS = 60.0f;
+        } graphics;
+
+        struct Audio
+        {
+
+        } audio;
+
+        struct Resources
+        {
+            const char* coreFolder = "";
+        } resources;
     };
 
     class App
     {
     public:
-        int Run();
+        int Run(const ApplicationConfig& config));
 
     protected:
         virtual bool OnInit() { return true; }
@@ -55,6 +87,8 @@ namespace Eugenix
         SDL_GLContext _glContext;
 
         CChronometer _chronometer;
+
+        ApplicationConfig _config;
     };
 } // namespace Eugenix
 

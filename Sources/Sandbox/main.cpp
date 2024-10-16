@@ -15,6 +15,10 @@
 
 #include "SimpleGLApp.h"
 
+#include "Core/Macros.h"
+
+TODO("Test todo")
+
 class SimpleApp : public SimpleGLApp
 {
 protected:
@@ -72,6 +76,12 @@ private:
 
 int main(int argc, char* argv[])
 {
+    (void)argc;
+    (void)argv;
+
+    AllocConsole();
+
+    Eugenix::ApplicationConfig config;
     SimpleApp app;
-    return app.Run();
+    return app.Run(config);
 }

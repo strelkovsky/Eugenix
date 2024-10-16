@@ -16,14 +16,61 @@
 #endif // EUGENIX_OPENGL
 
 
+
+
+
+
+#define MAX_KEYS	1024
+#define MAX_BUTTONS 32
+
+static bool m_Keys[MAX_KEYS] {false};
+static bool m_MouseButtons[MAX_BUTTONS] {false};
+
+static double mx, my;
+
+static bool IsKeyPressed(unsigned int keyCode)
+{
+	// TODO: log it
+	if (keyCode >= MAX_KEYS)
+		return false;
+
+	return m_Keys[keyCode];
+}
+
+
+static bool IsMouseButtonPressed(unsigned int button)
+{
+	// TODO: log it
+	if (button >= MAX_BUTTONS)
+		return false;
+
+	return m_MouseButtons[button];
+}
+
+static void GetMousePosition(double& x, double& y)
+{
+	x = mx;
+	y = my;
+}
+
+
+
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
 	////if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	////	glfwSetWindowShouldClose(window, GL_TRUE);
+
+	m_Keys[key] = (action != GLFW_RELEASE);
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+	m_MouseButtons[button] = (action != GLFW_RELEASE);
+}
+
+static void cursor_posirion_callback(GLFWwindow* window, double xpos, double ypos)
+{
+
 }
 
 static void resize_callback(GLFWwindow* window, int width, int height)
@@ -71,6 +118,7 @@ namespace Eugenix
 
 			glfwSetKeyCallback(_window, key_callback);
 			glfwSetMouseButtonCallback(_window, mouse_button_callback);
+			glfwSetCursorPosCallback(_window, cursor_posirion_callback);
 			glfwSetWindowSizeCallback(_window, resize_callback);
 
 #ifdef EUGENIX_OPENGL

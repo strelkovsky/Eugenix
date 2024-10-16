@@ -13,6 +13,7 @@
 #include <SDL.h>
 
 #include "App.h"
+#include "Platform/Platform.h"
 #include "Platform/Runtime.h"
 
 const int DEFAULT_WIDTH = 1024, DEFAULT_HEIGHT = 768;
@@ -38,8 +39,14 @@ std::string App::loadStringFromFile(const std::string& filename)
     return line;
 }
 
-int App::Run()
+int App::Run(const ApplicationConfig& config)
 {
+#if defined(EUGENIX_COMPILER_MSVC) && defined(EUGENIX_DEBUG)
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
+    _config = config;
+
     if (!Runtime::Init(DisplaySetup()))
         return 1;
 
