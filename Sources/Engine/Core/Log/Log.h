@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <memory>
+
 namespace Eugenix
 {
 	namespace Log
@@ -24,6 +26,11 @@ namespace Eugenix
 			virtual ~LogProcessor() = 0;
 			virtual void Message(Level level, const char* format, va_list argsptr) = 0;
 		};
+
+		void SetLoglevel(Level level);
+		void SetLogFilter(const char* filter);
+
+		void Attach(std::unique_ptr<LogProcessor> proc);
 
 		void Info(const char* fmtMsg, ...);
 		void Warning(const char* fmtMsg, ...);

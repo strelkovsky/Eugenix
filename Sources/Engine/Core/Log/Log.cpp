@@ -6,7 +6,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <list>
-#include <memory>
+
 #include "Log.h"
 
 namespace Eugenix
@@ -16,24 +16,40 @@ namespace Eugenix
 		namespace _details
 		{
 			std::list<std::unique_ptr<LogProcessor>> processors;
-
-			Level current_level;
+			Level currentLevel{Level::Info};
 
 			void logMessage(Level level, const char* format, va_list argsptr)
 			{
-				if (processors.empty())
+				if (level >= currentLevel)
 				{
-					vprintf(format, argsptr);
-				}
-				else
-				{
-					for (auto& p : processors)
+					if (processors.empty())
 					{
-						p->Message(level, format, argsptr);
+						vprintf(format, argsptr);
+					}
+					else
+					{
+						for (auto& p : processors)
+						{
+							p->Message(level, format, argsptr);
+						}
 					}
 				}
 			}
 		} // namespace _details
+
+		void SetLoglevel(Level level)
+		{
+			_details::currentLevel = level;
+		}
+
+		void SetLogFilter(const char* filter)
+		{
+		}
+
+		void Attach(std::unique_ptr<LogProcessor> processor)
+		{
+			_details::processors.push_back(processor);
+		}
 
 		void Info(const char* formatMessage, ...)
 		{
