@@ -70,7 +70,7 @@ namespace Eugenix
     class App
     {
     public:
-        int Run(const ApplicationConfig& config));
+        int Run(const ApplicationConfig& config);
 
     protected:
         virtual bool OnInit() { return true; }

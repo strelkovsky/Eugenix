@@ -79,8 +79,6 @@ int main(int argc, char* argv[])
     (void)argc;
     (void)argv;
 
-    AllocConsole();
-
     Eugenix::ApplicationConfig config;
     SimpleApp app;
     return app.Run(config);
