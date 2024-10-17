@@ -93,9 +93,12 @@ static std::map<std::string, GLHandle> GetUniformLocations(GLuint program)
 		GLenum type;
 		char name[128];
 
-		glGetActiveUniform(program, static_cast<GLuint>(i), sizeof(name) - 1, &namelen, &num, &type, name);
+		glGetActiveUniform(program, static_cast<GLHandle>(i), sizeof(name) - 1, &namelen, &num, &type, name);
 		name[namelen] = 0;
 		GLuint location = glGetUniformLocation(program, name);
+
+		Eugenix::Log::Info("Uniform %s index - %d \n", name, location);
+
 		outUniforms[name] = location;
 	}
 	return outUniforms;
