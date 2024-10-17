@@ -14,15 +14,18 @@
 #include "Core/Base.h"
 #include "SimpleGLRender.h"
 
+#undef GL_OFFSET
+#define GL_OFFSET(x) ((const GLvoid *)(x))
+
 GLTexture::GLTexture(unsigned char* data, int width, int height, int comp)
 {
-	glGenTextures(1, &_glTexture);
-	glBindTexture(GL_TEXTURE_2D, _glTexture);
+	glGenTextures(1, &_glHandle);
+	glBindTexture(GL_TEXTURE_2D, _glHandle);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// Set texture wrapping to GL_REPEAT
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	if (comp == 3)
@@ -39,13 +42,13 @@ GLTexture::GLTexture(unsigned char* data, int width, int height, int comp)
 GLTexture::~GLTexture()
 {
 	// TODO : check glIsBuffer
-	glDeleteTextures(1, &_glTexture);
+	glDeleteTextures(1, &_glHandle);
 }
 
 void GLTexture::Use()
 {
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _glTexture);
+	glBindTexture(GL_TEXTURE_2D, _glHandle);
 }
 
 void CheckShaderCompileStatus(GLHandle shaderId)
@@ -76,12 +79,12 @@ void CheckProgramLinkStatus(GLHandle programId)
 	}
 }
 
-static std::map<std::string, GLint> GetUniformLocations(GLuint program)
+static std::map<std::string, GLHandle> GetUniformLocations(GLuint program)
 {
 	int numUni = -1;
 	glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &numUni);
 
-	std::map<std::string, GLint> outUniforms;
+	std::map<std::string, GLHandle> outUniforms;
 
 	for (int i = 0; i < numUni; ++i)
 	{
@@ -113,28 +116,27 @@ GLShaderProgram::GLShaderProgram(const std::string& vsSource, const std::string&
 	glCompileShader(fragmentShader);
 	CheckShaderCompileStatus(fragmentShader);
 
-	_glProgram = glCreateProgram();
-	glAttachShader(_glProgram, vertexShader);
-	glAttachShader(_glProgram, fragmentShader);
-	glLinkProgram(_glProgram);
-	CheckProgramLinkStatus(_glProgram);
+	_glHandle = glCreateProgram();
+	glAttachShader(_glHandle, vertexShader);
+	glAttachShader(_glHandle, fragmentShader);
+	glLinkProgram(_glHandle);
+	CheckProgramLinkStatus(_glHandle);
 
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-	_uniformLocations = GetUniformLocations(_glProgram);
-	int i = 0;
+	_uniformLocations = GetUniformLocations(_glHandle);
 }
 
 GLShaderProgram::~GLShaderProgram()
 {
 	// TODO : check glIsProgram
-	glDeleteProgram(_glProgram);
+	glDeleteProgram(_glHandle);
 }
 
 void GLShaderProgram::Use()
 {
-	glUseProgram(_glProgram);
+	glUseProgram(_glHandle);
 }
 
 void GLShaderProgram::Unuse()
@@ -149,31 +151,92 @@ void GLShaderProgram::SetUniform(const char* name, const glm::mat4& mat)
 	glUniformMatrix4fv(_uniformLocations[name], 1, GL_FALSE, glm::value_ptr(mat));
 }
 
-GLRenderObject::GLRenderObject(GLHandle vao, int count)
+size_t GetAttribSize(StandartAttribs type)
 {
-	_vao = vao;
-	_count = count;
+	if (type == StandartAttribs::PositionAttrib || type == StandartAttribs::ColorAttrib)
+		return 3;
+	else if (type == StandartAttribs::UvAttrib)
+		return 2;
+
+	return 3;
 }
 
-GLRenderObject::~GLRenderObject()
+GLenum GetAttribType(StandartAttribs type)
 {
+	if (type == StandartAttribs::PositionAttrib || type == StandartAttribs::ColorAttrib || type == StandartAttribs::UvAttrib)
+		return GL_FLOAT;
 
-	return;
-	// TODO : check glIsBuffer
-	if (_vao)
+	return GL_FLOAT;
+}
+
+void ToggleAttrib(StandartAttribs attrib, GLboolean normalized, size_t vertexSize, const GLvoid* offset)
+{
+	glEnableVertexAttribArray((GLuint)attrib);
+	glVertexAttribPointer((GLuint)attrib, GetAttribSize(attrib), GetAttribType(attrib), normalized, vertexSize, offset);
+}
+
+GLMesh::GLMesh(PrimitiveType type, uint32_t format, const void* vertData, size_t verticesSize, size_t vertexSize, const void* indData, size_t indiciesSize, size_t vertsCount, size_t indCount)
+	: _topology(type), _vertsCount(vertsCount), _indexCount(indCount)
+{
+	glGenVertexArrays(1, &_meshVao);
+	glBindVertexArray(_meshVao);
+
+	glGenBuffers(1, &_meshVbo);
+	glBindBuffer(GL_ARRAY_BUFFER, _meshVbo);
+	glBufferData(GL_ARRAY_BUFFER, verticesSize, vertData, GL_STATIC_DRAW);
+
+	if (format & VertexAttribs::Position)
 	{
-		glBindVertexArray(0);
-		glDeleteVertexArrays(1, &_vao);
+		ToggleAttrib(StandartAttribs::PositionAttrib, GL_FALSE, vertexSize, GL_OFFSET(0));
+	}
+	if (format & VertexAttribs::Uv)
+	{
+		ToggleAttrib(StandartAttribs::UvAttrib, GL_FALSE, vertexSize, GL_OFFSET(sizeof(glm::vec3)));
+	}
+
+	if (_indexCount > 0)
+	{
+		glGenBuffers(1, &_meshIbo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _meshIbo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiciesSize, indData, GL_STATIC_DRAW);
 	}
 }
 
-void GLRenderObject::Draw() const
+GLMesh::~GLMesh()
 {
-	glBindVertexArray(_vao);
+	if (_meshVbo && glIsBuffer(_meshVbo))
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glDeleteBuffers(1, &_meshVbo);
+	}
 
-	glDrawArrays(GL_TRIANGLES, 0, _count);
+	if (_meshIbo && glIsBuffer(_meshIbo))
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glDeleteBuffers(1, &_meshIbo);
+	}
 
-	glBindVertexArray(0);
+	if (_meshVao && glIsVertexArray(_meshVao))
+	{
+		glBindVertexArray(0);
+		glDeleteVertexArrays(1, &_meshVao);
+	}
+}
+
+void GLMesh::Draw() const
+{
+	glBindVertexArray(_meshVao);
+
+	static const GLenum glPrimitive[] =
+	{
+		GL_TRIANGLES,
+		GL_TRIANGLE_STRIP,
+	};
+
+	if (_indexCount > 0)
+		glDrawElements(glPrimitive[(int)_topology], _indexCount, GL_UNSIGNED_INT, NULL);
+	else
+		glDrawArrays(glPrimitive[(int)_topology], 0, _vertsCount);
 }
 
 namespace ShaderEnv
@@ -210,8 +273,8 @@ namespace ShaderEnv
 				})";
 
 				simpleDiffuseProgram = std::make_shared<GLShaderProgram>(vsSource, fsSource);
-				//glBindAttribLocation(simpleDiffuseProgram, StandartAttribs::PositionAttrib, "position");
-				//glBindAttribLocation(simpleDiffuseProgram, StandartAttribs::UvAttrib, "uv");
+				glBindAttribLocation(simpleDiffuseProgram->Id(), (GLuint)StandartAttribs::PositionAttrib, "position");
+				glBindAttribLocation(simpleDiffuseProgram->Id(), (GLuint)StandartAttribs::UvAttrib, "uv");
 			}
 			return simpleDiffuseProgram;
 		}

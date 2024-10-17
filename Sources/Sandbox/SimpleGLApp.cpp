@@ -8,6 +8,7 @@
 #include <stb_image.h>
 
 #include "AppLayer/App.h"
+#include "Core/Base.h"
 
 #include "SimpleGLApp.h"
 
@@ -23,6 +24,20 @@ GLTexturePtr SimpleGLApp::CreateTextureFromFile(const std::string& textureFile)
     return texture;  
 }
 
+void SimpleGLApp::Clear(uint32_t flags)
+{
+	GLbitfield glMask = 0;
+
+	if (flags & ClearFlags::Color)
+		glMask |= GL_COLOR_BUFFER_BIT;
+	if (flags & ClearFlags::Depth)
+		glMask |= GL_DEPTH_BUFFER_BIT;
+	if (flags & ClearFlags::Stencil)
+		glMask |= GL_STENCIL_BUFFER_BIT;
+
+	glClear(glMask);
+}
+
 GLProgramPtr SimpleGLApp::CreateProgramFromFile(const std::string& vsSourceFile, const std::string& fsSourceFile)
 {
     return CreateProgramFromSource(loadStringFromFile(vsSourceFile), loadStringFromFile(fsSourceFile));
@@ -33,75 +48,125 @@ GLProgramPtr SimpleGLApp::CreateProgramFromSource(const std::string& vsSource, c
     return std::make_shared<GLShaderProgram>(vsSource, fsSource);
 }
 
-GLRenderObjectPtr SimpleGLApp::CreateCube()
+struct CubeVertex
 {
-	static const GLfloat points[] = {
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-	0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-	0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+	glm::vec3 m_pos;
+	glm::vec2 m_tex;
 
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-	0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	CubeVertex() {}
 
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	CubeVertex(glm::vec3 pos, glm::vec2 tex)
+	{
+		m_pos = pos;
+		m_tex = tex;
+	}
+};
 
-	0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+GLMeshPtr SimpleGLApp::CreateCubeMesh(float size)
+{
+	static const CubeVertex points[] =
+	{
+		CubeVertex(glm::vec3(-size, -size, -size), glm::vec2(0.0f, 0.0f)),
+		CubeVertex(glm::vec3(size, -size, -size), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(size, size, -size), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(size, size, -size), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(-size, size, size), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(-size, -size, -size), glm::vec2(0.0f, 0.0f)),
 
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-	0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		CubeVertex(glm::vec3(-size, -size, size), glm::vec2(0.0f, 0.0f)),
+		CubeVertex(glm::vec3(size, -size, size), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(size, size, size), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(size, size, size), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(-size, size, size), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(-size, -size, size), glm::vec2(0.0f, 0.0f)),
 
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-	0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+		CubeVertex(glm::vec3(-size, size, size), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(-size, size, -size), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(-size, -size, -size), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(-size, size, size), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(-size, --size, size), glm::vec2(0.0f, 0.0f)),
+		CubeVertex(glm::vec3(-size, size, size), glm::vec2(1.0f, 0.0f)),
+
+		CubeVertex(glm::vec3(size, size, size), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(size, size, -size), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(size, -size, -size), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(size, -size, -size), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(size, -size, size), glm::vec2(0.0f, 0.0f)),
+		CubeVertex(glm::vec3(size, size, size), glm::vec2(0.0f, 0.0f)),
+
+		CubeVertex(glm::vec3(-size, -size, -size), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(size, -size, -size), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(size, -size, size), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(size, -size, size), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(-size, -size, size), glm::vec2(0.0f, 0.0f)),
+		CubeVertex(glm::vec3(-size, -size, -size), glm::vec2(0.0f, 1.0f)),
+
+		CubeVertex(glm::vec3(-size, size, -size), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(size, size, -size), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(size, size, size), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(size, size, size), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(-size, size, size), glm::vec2(0.0f, 0.0f)),
+		CubeVertex(glm::vec3(-size, size, -size), glm::vec2(0.0f, 1.0f)),
 	};
 
-	auto vao = CreateVAO();
-	auto vbo = CreateVertexBuffer(sizeof(points), &points[0], GL_STATIC_DRAW);
+	uint32_t format = VertexAttribs::Position | VertexAttribs::Uv;
+	return std::make_shared<GLMesh>(PrimitiveType::Triangles, format, points, sizeof(points), sizeof(CubeVertex), nullptr, 0, EUGENIX_ARRAY_SIZE(points), 0);
+}
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0,                   // number of attribute
-		3,                   // size of "pos" (vec3) 
-		GL_FLOAT,            // type of "pos"
-		GL_FALSE,            // do not normalize
-		5 * sizeof(GLfloat),   // step between vertex (pos - 3, uv - 2)
-		(GLvoid*)0);         // offset
+GLMeshPtr SimpleGLApp::CreateIndexedCubeMesh(float s)
+{
+	static const CubeVertex cubeVertices[] =
+	{
+		// front
+		CubeVertex(glm::vec3(-s, s, s), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(s, s, s), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(s,-s, s), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(-s,-s, s), glm::vec2(0.0f, 0.0f)),
 
+		// back
+		CubeVertex(glm::vec3(s, s,-s), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(-s, s,-s), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(-s,-s,-s), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(s,-s,-s), glm::vec2(0.0f, 0.0f)),
 
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2,                   // number of attribute
-		2,                   // size of "uv" (vec2) 
-		GL_FLOAT,            // type of "uv"
-		GL_FALSE,            // do not normalize
-		5 * sizeof(GLfloat), // step between vertex (pos - 3, uv - 2)
-		(GLvoid*)(3 * sizeof(GLfloat))); // offset (after pos)
+		// top
+		CubeVertex(glm::vec3(-s, s,-s), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(s, s,-s), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(s, s, s), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(-s, s, s), glm::vec2(0.0f, 0.0f)),
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+		// bottom
+		CubeVertex(glm::vec3(s,-s,-s), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(-s,-s,-s), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(-s,-s, s), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(s,-s, s), glm::vec2(0.0f, 0.0f)),
 
-	return std::make_shared<GLRenderObject>(vao, 36);
+		// left
+		CubeVertex(glm::vec3(-s, s,-s), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(-s, s, s), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(-s,-s, s), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(-s,-s,-s), glm::vec2(0.0f, 0.0f)),
+
+		// right
+		CubeVertex(glm::vec3(s, s, s), glm::vec2(0.0f, 1.0f)),
+		CubeVertex(glm::vec3(s, s,-s), glm::vec2(1.0f, 1.0f)),
+		CubeVertex(glm::vec3(s,-s,-s), glm::vec2(1.0f, 0.0f)),
+		CubeVertex(glm::vec3(s,-s, s), glm::vec2(0.0f, 0.0f)),
+	};
+
+	static const uint32_t cubeIndices[] =
+	{
+		0, 3, 1,  1, 3, 2, // front
+		4, 7, 5,  5, 7, 6, // back
+		8,11, 9,  9,11,10, // top
+		12,15,13, 13,15,14, // bottom
+		16,19,17, 17,19,18, // left
+		20,23,21, 21,23,22  // right
+	};
+
+	uint32_t format = VertexAttribs::Position | VertexAttribs::Uv;
+	return std::make_shared<GLMesh>(PrimitiveType::Triangles, format, cubeVertices, sizeof(cubeVertices), sizeof(CubeVertex), cubeIndices, sizeof(cubeIndices), EUGENIX_ARRAY_SIZE(cubeVertices),
+		EUGENIX_ARRAY_SIZE(cubeIndices));
 }
 
 GLHandle SimpleGLApp::CreateVAO()
@@ -113,7 +178,7 @@ GLHandle SimpleGLApp::CreateVAO()
     return handle;
 }
 
-GLHandle SimpleGLApp::CreateVertexBuffer(size_t size, const void* data, GLenum usage)
+GLHandle SimpleGLApp::CreateVertexBuffer(size_t size, const void* data, GLHandle usage)
 {
 	GLHandle handle;
 	glGenBuffers(1, &handle);

@@ -6,6 +6,7 @@
 #pragma once
 
 #include <chrono>
+#include <string>
 
 #include <SDL.h>
 
