@@ -20,6 +20,7 @@ namespace Eugenix
 	{
 		DisplaySetup _setup;
 		SDL_Window* _window = nullptr;
+
 #ifdef EUGENIX_OPENGL
 		SDL_GLContext _context = nullptr;
 #endif // EUGENIX_OPENGL
@@ -49,16 +50,23 @@ namespace Eugenix
 			_window = SDL_CreateWindow("EugenixFramework", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _setup.width, _setup.height, flags);
 			if (!_window)
 			{
-				Log::Fatal("Window could not be created! - %s", SDL_GetError());
+				Log::Fatal("Failed to create SDL window! - %s", SDL_GetError());
 				return false;
+			}
+			else
+			{
+				Log::Info("SDL window successfully created.\n");
 			}
 
 #ifdef EUGENIX_OPENGL
 			_context = SDL_GL_CreateContext(_window);
 			if (!_context)
 			{
-				Log::Fatal("OpenGL context could not be created! - %s", SDL_GetError());
+				Log::Fatal("Failed to create SDL OpenGL context! - %s", SDL_GetError());
 				return false;
+			}
+			{
+				Log::Info("SDL OpenGL context successfully created.\n");
 			}
 
 			if (SDL_GL_SetSwapInterval(1) < 0)
@@ -68,9 +76,10 @@ namespace Eugenix
 
 			if (!EugenixGL::Init())
 			{
-				Debug::Fatal("EugenixGL init failed!");
+				Log::Fatal("EugenixGL init failed!");
 				return false;
 			}
+
 #endif // EUGENIX_OPENGL
 			return true;
 		}
@@ -128,6 +137,15 @@ namespace Eugenix
 		void Resize(uint32_t width, uint32_t height)
 		{
 			SDL_SetWindowSize(_window, width, height);
+		}
+
+		void ToggleFullScreen(bool fullScreen)
+		{
+			if (SDL_SetWindowFullscreen(_window, fullScreen ? 1 : 0) != 0)
+			{
+				Log::Error("Unable to switch window  mode:%s\n", SDL_GetError());
+				return;
+			}
 		}
 
 		const DisplaySetup& Setup()

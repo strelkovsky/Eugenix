@@ -8,8 +8,8 @@
 //--------------------------------------------------------------------
 // Runtime stuff
 //--------------------------------------------------------------------
-//#define EUGENIX_NATIVE_RUNTIME
-#define EUGENIX_GLFW_RUNTIME
+#define EUGENIX_NATIVE_RUNTIME
+//#define EUGENIX_GLFW_RUNTIME
 //#define EUGENIX_SDL_RUNTIME
 
 #define EUGENIX_OPENGL

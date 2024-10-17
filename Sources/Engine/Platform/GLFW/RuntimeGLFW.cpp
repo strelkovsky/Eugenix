@@ -94,8 +94,12 @@ namespace Eugenix
 
 			if (glfwInit() != GLFW_TRUE)
 			{
-				Log::Fatal("glfwInit error");
+				Log::Fatal("Failed to init GLFW!\n");
 				return false;
+			}
+			else
+			{
+				Log::Info("GLFW successfully initialized\n");
 			}
 
 #ifdef EUGENIX_OPENGL
@@ -103,7 +107,7 @@ namespace Eugenix
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif // EUGENIX_OPENGL
-			glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+			glfwWindowHint(GLFW_RESIZABLE, _setup.resizable);
 
 #ifdef EUGENIX_DEBUG
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
@@ -112,8 +116,12 @@ namespace Eugenix
 			_window = glfwCreateWindow(_setup.width, _setup.height, "Eugenix", nullptr, nullptr);
 			if (!_window)
 			{
-				Log::Fatal("Window could not be created!");
+				Log::Fatal("Failed to create GLFW window!\n");
 				return false;
+			}
+			else
+			{
+				Log::Info("GLFW window successfully created.\n");
 			}
 
 			glfwSetKeyCallback(_window, key_callback);

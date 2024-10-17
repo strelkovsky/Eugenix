@@ -5,7 +5,7 @@
 
 #include "Platform/Platform.h"
 
-#ifdef EUGENIX_WINDOWS
+#ifdef EUGENIX_PLATFORM_WINDOWS
 
 #include <cstdarg>
 #include <cstdio>

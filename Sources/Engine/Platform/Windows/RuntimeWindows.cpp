@@ -5,7 +5,7 @@
 
 #include "Platform/Platform.h"
 
-#if defined (EUGENIX_WINDOWS) && defined (EUGENIX_NATIVE_RUNTIME)
+#if defined (EUGENIX_PLATFORM_WINDOWS) && defined (EUGENIX_NATIVE_RUNTIME)
 
 #ifdef EUGENIX_OPENGL
 #	include <windows.h> // Header File For Windows
