@@ -63,9 +63,9 @@ enum struct PrimitiveType : uint16_t
 
 enum struct StandartAttribs : uint16_t
 {
-	PositionAttrib,
-	UvAttrib,
-	ColorAttrib,
+	Position,
+	Uv,
+	Color,
 };
 
 struct GLMesh final : GLHandledObject

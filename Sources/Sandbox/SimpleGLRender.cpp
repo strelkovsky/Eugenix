@@ -156,9 +156,9 @@ void GLShaderProgram::SetUniform(const char* name, const glm::mat4& mat)
 
 size_t GetAttribSize(StandartAttribs type)
 {
-	if (type == StandartAttribs::PositionAttrib || type == StandartAttribs::ColorAttrib)
+	if (type == StandartAttribs::Position || type == StandartAttribs::Color)
 		return 3;
-	else if (type == StandartAttribs::UvAttrib)
+	else if (type == StandartAttribs::Uv)
 		return 2;
 
 	return 3;
@@ -166,7 +166,7 @@ size_t GetAttribSize(StandartAttribs type)
 
 GLenum GetAttribType(StandartAttribs type)
 {
-	if (type == StandartAttribs::PositionAttrib || type == StandartAttribs::ColorAttrib || type == StandartAttribs::UvAttrib)
+	if (type == StandartAttribs::Position || type == StandartAttribs::Color || type == StandartAttribs::Uv)
 		return GL_FLOAT;
 
 	return GL_FLOAT;
@@ -190,11 +190,11 @@ GLMesh::GLMesh(PrimitiveType type, uint32_t format, const void* vertData, size_t
 
 	if (format & VertexAttribs::Position)
 	{
-		ToggleAttrib(StandartAttribs::PositionAttrib, GL_FALSE, vertexSize, GL_OFFSET(0));
+		ToggleAttrib(StandartAttribs::Position, GL_FALSE, vertexSize, GL_OFFSET(0));
 	}
 	if (format & VertexAttribs::Uv)
 	{
-		ToggleAttrib(StandartAttribs::UvAttrib, GL_FALSE, vertexSize, GL_OFFSET(sizeof(glm::vec3)));
+		ToggleAttrib(StandartAttribs::Uv, GL_FALSE, vertexSize, GL_OFFSET(sizeof(glm::vec3)));
 	}
 
 	if (_indexCount > 0)
@@ -276,8 +276,8 @@ namespace ShaderEnv
 				})";
 
 				simpleDiffuseProgram = std::make_shared<GLShaderProgram>(vsSource, fsSource);
-				glBindAttribLocation(simpleDiffuseProgram->Id(), (GLuint)StandartAttribs::PositionAttrib, "position");
-				glBindAttribLocation(simpleDiffuseProgram->Id(), (GLuint)StandartAttribs::UvAttrib, "uv");
+				glBindAttribLocation(simpleDiffuseProgram->Id(), (GLuint)StandartAttribs::Position, "position");
+				glBindAttribLocation(simpleDiffuseProgram->Id(), (GLuint)StandartAttribs::Uv, "uv");
 			}
 			return simpleDiffuseProgram;
 		}
