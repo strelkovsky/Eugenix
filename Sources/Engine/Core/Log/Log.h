@@ -30,7 +30,7 @@ namespace Eugenix
 		void SetLoglevel(Level level);
 		void SetLogFilter(const char* filter);
 
-		void Attach(std::unique_ptr<LogProcessor> proc);
+		void Attach(std::shared_ptr<LogProcessor> proc);
 
 		void Info(const char* fmtMsg, ...);
 		void Warning(const char* fmtMsg, ...);

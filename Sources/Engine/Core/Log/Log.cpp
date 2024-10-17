@@ -15,7 +15,7 @@ namespace Eugenix
 	{
 		namespace _details
 		{
-			std::list<std::unique_ptr<LogProcessor>> processors;
+			std::list<std::shared_ptr<LogProcessor>> processors;
 			Level currentLevel{Level::Info};
 
 			void logMessage(Level level, const char* format, va_list argsptr)
@@ -46,7 +46,7 @@ namespace Eugenix
 		{
 		}
 
-		void Attach(std::unique_ptr<LogProcessor> processor)
+		void Attach(std::shared_ptr<LogProcessor> processor)
 		{
 			_details::processors.push_back(processor);
 		}
