@@ -9,10 +9,7 @@
 #include "Core/Base.h"
 #include "EugenixGL.h"
 
-#ifdef EUGENIX_OPENGL_GLEW
-#	define GLEW_STATIC
-#	include <GL/glew.h>
-#endif // EUGENIX_OPENGL_GLEW
+#include "gl_include.h"
 
 #define OPENGL_INT_PRINT_INFO(name) \
 	GLint info_ ## name; \
