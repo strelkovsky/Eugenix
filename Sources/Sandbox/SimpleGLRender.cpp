@@ -258,21 +258,21 @@ namespace ShaderEnv
 				layout (location = 0) in vec3 position;
 				layout (location = 1) in vec2 texCoord;
 				uniform mat4 mvp;
-				out vec2 TexCoord;
+				out vec2 fragTexcoord;
 				void main()
 				{
 					gl_Position = mvp * vec4(position, 1.0f);
-					TexCoord = texCoord;
+					fragTexcoord = texCoord;
 				})";
 
 				const char* fsSource = R"(
 				#version 330 core
-				in vec2 TexCoord;
-				out vec4 color;
 				uniform sampler2D ourTexture;
+				in vec2 fragTexcoord;
+				out vec4 color;
 				void main()
 				{
-					color = texture(ourTexture, TexCoord);
+					color = texture(ourTexture, fragTexcoord);
 				})";
 
 				simpleDiffuseProgram = std::make_shared<GLShaderProgram>(vsSource, fsSource);
