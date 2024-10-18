@@ -6,10 +6,9 @@
 #include "Platform/Platform.h"
 
 #ifdef EUGENIX_OPENGL
+
 #include "Core/Base.h"
 #include "EugenixGL.h"
-
-#include "gl_include.h"
 
 #define OPENGL_INT_PRINT_INFO(name) \
 	GLint info_ ## name; \
@@ -20,6 +19,65 @@ namespace Eugenix
 {
 	namespace EugenixGL
 	{
+		GLenum oglError = GL_NO_ERROR;
+
+		const char* GetErrorString(GLenum err)
+		{
+			switch (err)
+			{
+			case GL_INVALID_ENUM:
+				return "Invalid enum";
+				break;
+			case GL_INVALID_VALUE:
+				return "Invalid value";
+				break;
+			case GL_INVALID_OPERATION:
+				return "Invalid operation";
+				break;
+			case GL_INVALID_FRAMEBUFFER_OPERATION:
+				return "Invalid framebuffer operation";
+				break;
+			case(GL_STACK_OVERFLOW):
+				return "Stack overflow";
+				break;
+			case(GL_STACK_UNDERFLOW):
+				return "Stack underflow";
+				break;
+			case GL_OUT_OF_MEMORY:
+				return "Out of memory";
+				break;
+			case GL_CONTEXT_LOST:
+				return "Context lost";
+				break;
+			default:
+				break;
+			}
+
+			return "Unknown error";
+		}
+
+#ifdef EUGENIX_OPENGL_NATIVE
+		namespace GLFunctions
+		{
+			bool LoadGlFuncs();
+		}
+#endif
+
+#ifdef EUGENIX_DEBUG
+		void GLAPIENTRY DebugMessageCallback(GLenum source,
+			GLenum type,
+			GLuint id,
+			GLenum severity,
+			GLsizei length,
+			const GLchar* message,
+			const void* userParam)
+		{
+			Log::Error("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+				(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+				type, severity, message);
+		}
+#endif // EUGENIX_DEBUG 
+
 		bool Init()
 		{
 #ifdef EUGENIX_OPENGL_GLEW
@@ -114,6 +172,11 @@ namespace Eugenix
 			glEnable(GL_DEPTH_TEST);
 			glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 			glClearDepth(1.0f);
+
+#ifdef EUGENIX_DEBUG
+			glEnable(GL_DEBUG_OUTPUT);
+			glDebugMessageCallback(DebugMessageCallback, 0);
+#endif // EUGENIX_DEBUG
 
 			return true;
 		}

@@ -9,7 +9,6 @@
 
 #ifdef EUGENIX_OPENGL
 #	include <windows.h> // Header File For Windows
-#	include <gl\gl.h> // Header File For The OpenGL32 Library
 #	include "Platform/OpenGL/EugenixGL.h"
 #	include "../Deps/gl/wglext.h"
 #endif // EUGENIX_OPENGL
@@ -184,13 +183,11 @@ namespace Eugenix
 				return false;
 			}
 
-
 			if (!EugenixGL::Init())
 			{
 				Log::Fatal("EugenixGL init failed!");
 				return false;
 			}
-
 
 			return true;
 		}
