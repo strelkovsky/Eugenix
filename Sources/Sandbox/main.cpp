@@ -33,8 +33,13 @@ protected:
 
     virtual void OnRender()
     {
-        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         Clear(ClearFlags::Color | ClearFlags::Depth);
+
+        Render::RenderQueue queue;
+
+        queue.Push(&_rop1);
+        queue.Push(&_rop2);
+        //queue.Render();
 
         _shaderProgram->Use();
         _texture->Use();
@@ -69,6 +74,9 @@ private:
 
     GLMeshPtr _mesh1;
     GLMeshPtr _mesh2;
+
+    Render::RenderObject _rop1;
+    Render::RenderObject _rop2;
 };
 
 int main(int argc, char* argv[])

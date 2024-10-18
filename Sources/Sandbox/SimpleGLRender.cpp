@@ -91,13 +91,39 @@ static std::map<std::string, GLHandle> GetUniformLocations(GLuint program)
 
 		OPENGL_CALL(glGetActiveUniform(program, static_cast<GLHandle>(i), sizeof(name) - 1, &namelen, &num, &type, name));
 		name[namelen] = 0;
-		GLuint location = glGetUniformLocation(program, name);
+		GLuint location = OPENGL_CALL(glGetUniformLocation(program, name));
 
 		Eugenix::Log::Info("Uniform %s index - %d \n", name, location);
 
 		outUniforms[name] = location;
 	}
 	return outUniforms;
+}
+
+static std::map<std::string, GLHandle> GetAttribLocations(GLuint program)
+{
+	int numAttrs = -1;
+	OPENGL_CALL(glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &numAttrs));
+
+	std::map<std::string, GLHandle> outAttributes;
+
+	for (int i = 0; i < numAttrs; ++i)
+	{
+		int namelen;
+		int num;
+		GLenum type;
+		char name[128];
+
+		OPENGL_CALL(glGetActiveAttrib(program, static_cast<GLHandle>(i), sizeof(name) - 1, &namelen, &num, &type, name));
+
+		name[namelen] = 0;
+		GLuint location = glGetAttribLocation(program, name);
+
+		Eugenix::Log::Info("Attribute %s index - %d \n", name, location);
+
+		outAttributes[name] = location;
+	}
+	return outAttributes;
 }
 
 GLShaderProgram::GLShaderProgram(const std::string& vsSource, const std::string& fsSource)
@@ -124,6 +150,7 @@ GLShaderProgram::GLShaderProgram(const std::string& vsSource, const std::string&
 	OPENGL_CALL(glDeleteShader(vertexShader));
 	OPENGL_CALL(glDeleteShader(fragmentShader));
 
+	_attribLocations = GetAttribLocations(_glHandle);
 	_uniformLocations = GetUniformLocations(_glHandle);
 }
 
@@ -168,14 +195,14 @@ GLenum GetAttribType(StandartAttribs type)
 	return GL_FLOAT;
 }
 
-void ToggleAttrib(StandartAttribs attrib, GLboolean normalized, size_t vertexSize, const GLvoid* offset)
-{
-	OPENGL_CALL(glEnableVertexAttribArray((GLuint)attrib));
-	OPENGL_CALL(glVertexAttribPointer((GLuint)attrib, GetAttribSize(attrib), GetAttribType(attrib), normalized, vertexSize, offset));
-}
-
 GLMesh::GLMesh(PrimitiveType type, uint32_t format, const void* vertData, size_t verticesSize, size_t vertexSize, const void* indData, size_t indiciesSize, size_t vertsCount, size_t indCount)
 	: _topology(type), _vertsCount(vertsCount), _indexCount(indCount)
+{
+	DoBuffersWork(vertData, verticesSize, indData, indiciesSize);
+	DoAttribsWork(format, vertexSize);
+}
+
+void GLMesh::DoBuffersWork(const void* vertData, size_t verticesSize, const void* indData, size_t indiciesSize)
 {
 	OPENGL_CALL(glGenVertexArrays(1, &_meshVao));
 	OPENGL_CALL(glBindVertexArray(_meshVao));
@@ -184,6 +211,22 @@ GLMesh::GLMesh(PrimitiveType type, uint32_t format, const void* vertData, size_t
 	OPENGL_CALL(glBindBuffer(GL_ARRAY_BUFFER, _meshVbo));
 	OPENGL_CALL(glBufferData(GL_ARRAY_BUFFER, verticesSize, vertData, GL_STATIC_DRAW));
 
+	if (_indexCount > 0)
+	{
+		OPENGL_CALL(glGenBuffers(1, &_meshIbo));
+		OPENGL_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _meshIbo));
+		OPENGL_CALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiciesSize, indData, GL_STATIC_DRAW));
+	}
+}
+
+void ToggleAttrib(StandartAttribs attrib, GLboolean normalized, size_t vertexSize, const GLvoid* offset)
+{
+	OPENGL_CALL(glEnableVertexAttribArray((GLuint)attrib));
+	OPENGL_CALL(glVertexAttribPointer((GLuint)attrib, GetAttribSize(attrib), GetAttribType(attrib), normalized, vertexSize, offset));
+}
+
+void GLMesh::DoAttribsWork(uint32_t format, size_t vertexSize)
+{
 	if (format & VertexAttribs::Position)
 	{
 		ToggleAttrib(StandartAttribs::Position, GL_FALSE, vertexSize, GL_OFFSET(0));
@@ -191,13 +234,6 @@ GLMesh::GLMesh(PrimitiveType type, uint32_t format, const void* vertData, size_t
 	if (format & VertexAttribs::Uv)
 	{
 		ToggleAttrib(StandartAttribs::Uv, GL_FALSE, vertexSize, GL_OFFSET(sizeof(glm::vec3)));
-	}
-
-	if (_indexCount > 0)
-	{
-		OPENGL_CALL(glGenBuffers(1, &_meshIbo));
-		OPENGL_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _meshIbo));
-		OPENGL_CALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiciesSize, indData, GL_STATIC_DRAW));
 	}
 }
 
@@ -240,6 +276,20 @@ void GLMesh::Draw() const
 	{
 		OPENGL_CALL(glDrawArrays(glPrimitive[(int)_topology], 0, _vertsCount));
 	}
+}
+
+uint32_t Render::RenderQueue::Render()
+{
+	unsigned int s = _queue.size();
+
+	for (unsigned int i = 0; i < _queue.size();)
+	{
+		glBindVertexArray(_queue[i]->vao);
+		glDrawArrays(GL_TRIANGLES, 0, _queue[i]->vertsCount);
+		_queue.erase(_queue.begin() + i);
+	}
+
+	return s;
 }
 
 namespace ShaderEnv

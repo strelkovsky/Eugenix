@@ -45,6 +45,8 @@ struct GLShaderProgram final : GLHandledObject
 	void SetUniform(const char* name, const glm::mat4& mat);
 
 private:
+
+	std::map<std::string, GLHandle> _attribLocations;
 	std::map<std::string, GLHandle> _uniformLocations;
 };
 using GLProgramPtr = std::shared_ptr<GLShaderProgram>;
@@ -76,6 +78,9 @@ struct GLMesh final : GLHandledObject
 	void Draw() const;
 
 private:
+	void DoBuffersWork(const void* vertData, size_t verticesSize, const void* indData, size_t indiciesSize);
+	void DoAttribsWork(uint32_t format, size_t vertexSize);
+
 	PrimitiveType _topology;
 	GLHandle _meshVao;
 	GLHandle _meshVbo;
@@ -93,3 +98,61 @@ namespace ShaderEnv
 		GLProgramPtr SimpleDiffuse();
 	} // namespace Defaults
 } // namespace ShaderEnv
+
+namespace Render
+{
+	struct Frame
+	{
+	public:
+		void Scale(float x, float y, float z)
+		{
+		}
+
+		void WorldPos(float x, float y, float z)
+		{
+		}
+
+		void Rotate(float x, float y, float z)
+		{
+		}
+
+		const glm::mat4* GetTrans();
+
+	private:
+		glm::vec3 translation;
+		glm::vec3 rotation;
+		glm::vec3 scale;
+		glm::mat4 trans;
+	};
+
+	struct RenderObject
+	{
+		virtual ~RenderObject() {}
+
+		PrimitiveType topology;
+		Frame frame;
+
+		GLHandle vao;
+		int vertsCount;
+	};
+
+	struct MeshRenderObject : public RenderObject
+	{
+	};
+
+	struct Camera;
+	struct RenderQueue
+	{
+		void Push(RenderObject* ro)
+		{
+			_queue.push_back(ro);
+		}
+
+		uint32_t Render();
+
+	private:
+		std::vector<RenderObject*> _queue;
+	};
+
+	void Draw(const Camera& cam, const RenderQueue& rq);
+} // namespace Render
